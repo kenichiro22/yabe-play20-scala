@@ -4,3 +4,9 @@ project/target
 target
 tmp
 .history
+.settings
+.cache
+.classpath
+.project
+RUNNING_PID
+
