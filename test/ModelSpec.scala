@@ -4,6 +4,7 @@ import play.api.test.Helpers._
 import anorm._
 import java.util.Date
 import org.yaml.snakeyaml.Yaml
+import org.joda.time.DateTime
 
 class ModelSpec extends Specification {
 
@@ -56,27 +57,30 @@ class ModelSpec extends Specification {
 
     "support comments" in {
       running(FakeApplication(additionalConfiguration = inMemoryDatabase())) {
-
         User.create(User(Id(1), "bob@gmail.com", "secret", "Bob", false))
-        Post.create(Post(Id(1), "My first post", "Hello world", new Date, 1))
+        
+        Post.create(Post(Id(1), "My first post", "Hello world", new DateTime("2012-01-01").toDate , 1))
+        Post.create(Post(Id(2), "Second post", "No comment", new DateTime("2012-01-02").toDate, 1))
         Comment.create(Comment(NotAssigned, "Jeff", "Nice post", new Date, 1))
         Comment.create(Comment(NotAssigned, "Tom", "I knew that !", new Date, 1))
 
         User.count() must beEqualTo(1)
-        Post.count() must beEqualTo(1)
+        Post.count() must beEqualTo(2)
         Comment.count() must beEqualTo(2)
 
         val list = Post.allWithAuthorAndComments
+        list.size must beEqualTo(2)
+        
+        list(1)._1.title must beEqualTo("My first post")
+        list(1)._2.email must beEqualTo("bob@gmail.com")
 
-        list.size must beEqualTo(1)
-        list(0)._1.title must beEqualTo("My first post")
-        list(0)._2.email must beEqualTo("bob@gmail.com")
-
-        val comments = list(0)._3
+        val comments = list(1)._3
         comments.size must beEqualTo(2)
         comments(0).author must beEqualTo("Jeff")
         comments(1).author must beEqualTo("Tom")
-
+        
+        list(0)._3 must beEmpty
+        
         val Some((post, author, comments2)) = Post.byIdWithAuthorAndComments(1)
 
         post.title must beEqualTo("My first post")

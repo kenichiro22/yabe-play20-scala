@@ -35,7 +35,7 @@ object Post {
   /**
    * Parse a (Post, User, List[Comment]) from a ResultSet
    */
-  val withAuthorAndComments = Post.simple ~ User.simple ~ (Comment.simple) map {
+  val withAuthorAndComments = Post.simple ~ User.simple ~ (Comment.simple ?) map {
     case post ~ user ~ comments => (post, user, comments)
   }
 
@@ -78,28 +78,32 @@ object Post {
             left join Comment c on c.post_id = p.id 
             order by p.postedAt desc
         """).as(withAuthorAndComments *)
-        .groupBy(row => (row._1, row._2))
-        .mapValues(_.unzip3._3)
-        .toList
-        .map(r => (r._1._1, r._1._2, r._2))
-    }
+        .groupBy(row => (row._1, row._2))        
+        .mapValues(_.unzip3._3.map(_.orNull))
+        .map(row => row._2 match {
+		  case List(null) => (row._1._1, row._1._2, List())
+		  case comments => (row._1._1, row._1._2, comments)
+		}).toList
+  }
 
   def byIdWithAuthorAndComments(id: Long): Option[(Post, User, List[Comment])] =
     DB.withConnection { implicit connection =>
       Some(
-        SQL (
+        SQL(
           """
             select * from Post p 
             join User u on p.author_id = u.id 
             left join Comment c on c.post_id = p.id 
             where p.id = {id}
         """)
-        .on("id" -> id)
-        .as(withAuthorAndComments *)
-        .groupBy(row => (row._1, row._2))
-        .mapValues(_.unzip3._3)
-        .toList
-        .map(r => (r._1._1, r._1._2, r._2)).head)
+          .on("id" -> id)
+          .as(withAuthorAndComments *)
+          .groupBy(row => (row._1, row._2))
+          .mapValues(_.unzip3._3.map(_.orNull))
+          .map(row => row._2 match {
+            case List(null) => (row._1._1, row._1._2, List())
+            case comments => (row._1._1, row._1._2, comments)
+          }).head)
     }
 
   def count() = {
