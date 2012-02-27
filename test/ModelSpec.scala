@@ -36,7 +36,7 @@ class ModelSpec extends Specification {
         User.create(User(Id(1), "bob@gmail.com", "secret", "Bob", false))
         Post.create(Post(NotAssigned, "My first post", "Hello!", new Date, 1))
 
-        Post.count() must beEqualTo(1)  
+        Post.count() must beEqualTo(1)
       }
     }
     "be retrieved with author" in {
@@ -55,11 +55,37 @@ class ModelSpec extends Specification {
       }
     }
 
+    "be retrieved with prev and next" in {
+      running(FakeApplication(additionalConfiguration = inMemoryDatabase())) {
+        User.create(User(Id(1), "bob@gmail.com", "secret", "Bob", false))
+        val posts = Seq(
+          Post.create(Post(Id(1), "My first post", "Hello world", new DateTime("2012-01-01").toDate, 1)),
+          Post.create(Post(Id(2), "My second post", "Hello world", new DateTime("2012-01-02").toDate, 1)),
+          Post.create(Post(Id(3), "My third post", "Hello world", new DateTime("2012-01-03").toDate, 1)))
+
+        // No prev
+        val post1prevNext = posts(0).prevNext;
+        post1prevNext._1.get.id.get must beEqualTo(2)
+        post1prevNext._2 must beNone
+
+        // Prev Next
+        val post2prevNext = posts(1).prevNext;
+        post2prevNext._1.get.id.get must beEqualTo(3)
+        post2prevNext._2.get.id.get must beEqualTo(1)
+
+        // No Next
+        val post3prevNext = posts(2).prevNext;
+        post3prevNext._1 must beNone
+        post3prevNext._2.get.id.get must beEqualTo(2)
+
+      }
+    }
+
     "support comments" in {
       running(FakeApplication(additionalConfiguration = inMemoryDatabase())) {
         User.create(User(Id(1), "bob@gmail.com", "secret", "Bob", false))
-        
-        Post.create(Post(Id(1), "My first post", "Hello world", new DateTime("2012-01-01").toDate , 1))
+
+        Post.create(Post(Id(1), "My first post", "Hello world", new DateTime("2012-01-01").toDate, 1))
         Post.create(Post(Id(2), "Second post", "No comment", new DateTime("2012-01-02").toDate, 1))
         Comment.create(Comment(NotAssigned, "Jeff", "Nice post", new Date, 1))
         Comment.create(Comment(NotAssigned, "Tom", "I knew that !", new Date, 1))
@@ -70,7 +96,7 @@ class ModelSpec extends Specification {
 
         val list = Post.allWithAuthorAndComments
         list.size must beEqualTo(2)
-        
+
         list(1)._1.title must beEqualTo("My first post")
         list(1)._2.email must beEqualTo("bob@gmail.com")
 
@@ -78,9 +104,9 @@ class ModelSpec extends Specification {
         comments.size must beEqualTo(2)
         comments(0).author must beEqualTo("Jeff")
         comments(1).author must beEqualTo("Tom")
-        
+
         list(0)._3 must beEmpty
-        
+
         val Some((post, author, comments2)) = Post.byIdWithAuthorAndComments(1)
 
         post.title must beEqualTo("My first post")
