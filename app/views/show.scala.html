@@ -1,7 +1,8 @@
 @(
 post:(models.Post,models.User,Seq[models.Comment]),
-pagination:(Option[models.Post],Option[models.Post])
-)
+pagination:(Option[models.Post],Option[models.Post]),
+commentForm: Form[(String, String)]
+)(implicit flash: Flash)
 
 @main(title = post._1.title) {
 
@@ -22,17 +23,15 @@ pagination:(Option[models.Post],Option[models.Post])
     }
 </ul>
 
+@flash.get("success").map { message =>
+    <div class="success">@message</div>
+}
+
 @display(post, mode = "full")
 
 @helper.form(action = routes.Application.postComment(post._1.id.get)){
-    <p>
-        <label for="author">Your name: </label>
-        <input type="text" name="author">
-    </p>
-    <p>
-        <label for="content">Your message: </label>
-        <textarea name="content"></textarea>
-    </p>
+	@helper.inputText(commentForm("author"), '_label -> "Your name:", '_showConstraints  -> false)
+	@helper.textarea(commentForm("content"), '_label -> "Your message:", '_showConstraints  -> false)
     <p>
         <input type="submit" value="Submit your comment"/>
     </p>
