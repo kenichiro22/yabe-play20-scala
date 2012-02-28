@@ -3,7 +3,7 @@
 # ~~~~
 GET     /posts/:id                           controllers.Application.show(id : Long)
 POST     /posts/:id/comments                  controllers.Application.postComment(id : Long)
-GET		/captcha							controllers.Application.captcha()
+GET		/captcha							controllers.Application.captcha(id : String)
 
 # Home page
 GET     /                           controllers.Application.index

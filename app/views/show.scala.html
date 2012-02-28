@@ -1,7 +1,7 @@
 @(
 post:(models.Post,models.User,Seq[models.Comment]),
 pagination:(Option[models.Post],Option[models.Post]),
-commentForm: Form[(String, String)]
+commentForm: Form[(String, String, String, String)]
 )(implicit flash: Flash)
 
 @main(title = post._1.title) {
@@ -30,8 +30,15 @@ commentForm: Form[(String, String)]
 @display(post, mode = "full")
 
 @helper.form(action = routes.Application.postComment(post._1.id.get)){
+	@commentForm.globalError.map { error =>
+	    <div class="error">@error.message</div>
+	}
+
 	@helper.inputText(commentForm("author"), '_label -> "Your name:", '_showConstraints  -> false)
 	@helper.textarea(commentForm("content"), '_label -> "Your message:", '_showConstraints  -> false)
+	@helper.inputText(commentForm("code"), '_label -> "Please type the code below:", '_showConstraints  -> false)
+	<img src="@routes.Application.captcha(commentForm("randomID").value.get)">
+	<input type="hidden" name="randomID" value="@commentForm("randomID").value">
     <p>
         <input type="submit" value="Submit your comment"/>
     </p>
