@@ -16,12 +16,7 @@ class ModelSpec extends Specification {
     "be created and retrieved by email and password" in {
       running(FakeApplication(additionalConfiguration = inMemoryDatabase())) {
 
-        val u = new User(NotAssigned, "bob@gmail.com", "secret", "Bob", false)
-        u.id.isDefined must beFalse
-        User.create(u);
-
-        // id must be defined
-        User.authenticate("bob@gmail.com", "secret").get.id.isDefined must beTrue
+        User.create(User("bob@gmail.com", "secret", "Bob", false));
 
         User.authenticate("bob@gmail.com", "secret") should not be (None)
         User.authenticate("bob@gmail.com", "badpassword") should be(None)
@@ -35,7 +30,7 @@ class ModelSpec extends Specification {
       running(FakeApplication(additionalConfiguration = inMemoryDatabase())) {
 
         User.create(User(Id(1), "bob@gmail.com", "secret", "Bob", false))
-        Post.create(Post(NotAssigned, "My first post", "Hello!", new Date, 1))
+        Post.create(Post("My first post", "Hello!", new Date, 1))
 
         Post.count() must beEqualTo(1)
       }
@@ -44,7 +39,7 @@ class ModelSpec extends Specification {
       running(FakeApplication(additionalConfiguration = inMemoryDatabase())) {
 
         User.create(User(Id(1), "bob@gmail.com", "secret", "Bob", false))
-        Post.create(Post(NotAssigned, "My 1st post", "Hello world", new Date, 1))
+        Post.create(Post("My 1st post", "Hello world", new Date, 1))
 
         val posts = Post.allWithAuthor
 
@@ -56,7 +51,7 @@ class ModelSpec extends Specification {
       }
     }
 
-    "be retrieved with prev and next" in {
+    "support prev and next" in {
       running(FakeApplication(additionalConfiguration = inMemoryDatabase())) {
         User.create(User(Id(1), "bob@gmail.com", "secret", "Bob", false))
         val posts = Seq(

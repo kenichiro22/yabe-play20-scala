@@ -9,6 +9,8 @@ case class User(id: Pk[Long] = NotAssigned,
   email: String, password: String, fullname: String, isAdmin: Boolean)
 
 object User {
+  def apply(email: String, password: String, fullname: String, isAdmin: Boolean) = new User(NotAssigned, email, password, fullname, isAdmin)
+
   // -- Parsers
 
   /**

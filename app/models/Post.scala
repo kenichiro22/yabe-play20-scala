@@ -66,6 +66,8 @@ case class Post(
 }
 
 object Post {
+  
+  def apply(title: String, content: String, postedAt: Date, authorId: Long) = new Post(NotAssigned, title, content, postedAt, authorId)
 
   // -- Parsers
 
