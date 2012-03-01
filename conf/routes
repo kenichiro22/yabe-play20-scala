@@ -1,7 +1,9 @@
 # Routes
 # This file defines all application routes (Higher priority routes first)
 # ~~~~
-GET     /posts/:id                           controllers.Application.show(id : Long)
+GET     /posts/$id<[0-9]+>                           controllers.Application.show(id : Long)
+GET     /posts/:tag                           controllers.Application.listTagged(tag : String)
+
 POST     /posts/:id/comments                  controllers.Application.postComment(id : Long)
 GET		/captcha							controllers.Application.captcha(id : String)
 

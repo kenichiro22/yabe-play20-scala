@@ -1,0 +1,11 @@
+# --- !Ups
+CREATE TABLE TagsForPosts (
+	id bigint(20) NOT NULL AUTO_INCREMENT,
+	tag_id bigint(20) DEFAULT NULL,
+	post_id bigint(20) DEFAULT NULL,
+	PRIMARY KEY (id),
+	FOREIGN KEY (tag_id) REFERENCES Tag (id) ON UPDATE CASCADE ON DELETE CASCADE ,
+	FOREIGN KEY (post_id) REFERENCES Post (id) ON UPDATE CASCADE ON DELETE CASCADE
+);
+# --- !Downs
+DROP TABLE TagsForPosts;

@@ -5,6 +5,7 @@ import anorm._
 import java.util.Date
 import org.yaml.snakeyaml.Yaml
 import org.joda.time.DateTime
+import org.specs2.matcher.ShouldExpectable
 
 class ModelSpec extends Specification {
 
@@ -114,6 +115,69 @@ class ModelSpec extends Specification {
         comments.length must beEqualTo(2)
         comments(0).author must beEqualTo("Jeff")
         comments(1).author must beEqualTo("Tom")
+      }
+    }
+
+    "support Tags" in {
+      running(FakeApplication(additionalConfiguration = inMemoryDatabase())) {
+
+        User.create(User(Id(1), "bob@gmail.com", "secret1", "Bob Morane", false))
+        val postJava = Post.create(Post(Id(1), "My first post", "Java and Scala: yes it rocks!", new Date, 1))
+        val javaTag = Tag.create(Tag(Id(1), "Java"))
+        val scalaTag = Tag.create(Tag(Id(2), "Scala"))
+        
+        Post.findTaggedWith("Java").length should beEqualTo(0)
+        Post.findTaggedWith("Scala").length should beEqualTo(0)
+
+        postJava.tagItWith("Java")
+        postJava.tagItWith("Scala")
+        Post.findTaggedWith("Java").length should beEqualTo(1)
+        Post.findTaggedWith("Scala").length should beEqualTo(1)
+
+        postJava.tagItWith("A new Tag that does not already exist")
+
+        // Should reuse existing TagsForPosts
+        postJava.tagItWith("Scala")
+        Post.findTaggedWith("Java").length should beEqualTo(1)
+        Post.findTaggedWith("Scala").length should beEqualTo(1)
+
+        // Another post
+        val postScala = Post.create(Post(Id(2), "A scala post", "Scala only", new Date, 1))
+        postScala.tagItWith("Scala")
+        Post.findTaggedWith("Scala").length should beEqualTo(2)
+
+        // Let's see what happens when we delete a Post
+        //        Post.delete("where id={pid}").on("pid" -> postJava.id()).executeUpdate()
+        //        Post.findTaggedWith("Scala").length should beEqualTo(1)
+      }
+    }
+  }
+
+  "Tag model" should {
+    "support Tag cloud" in {
+      running(FakeApplication(additionalConfiguration = inMemoryDatabase())) {
+        User.create(User(Id(1), "bob@gmail.com", "secret1", "Bob Morane", false))
+
+        val postJava = Post.create(Post(Id(1), "My first post", "Java 7 is out!", new Date, 1))
+        postJava.tagItWith("Java")
+        postJava.tagItWith("JEE")
+
+        val postScalaJava = Post.create(Post(Id(2), "Another post", "Java and Scala: yes it rocks!", new Date, 1))
+        postScalaJava.tagItWith("Java")
+        postScalaJava.tagItWith("Scala")
+
+        val cloud: List[(String, Long)] = TagsForPosts.getCloud
+
+        cloud.length should beEqualTo(3)
+
+        cloud.map { tagAndTotal =>
+          tagAndTotal match {
+            case ("Java", cpt) => cpt should beEqualTo(2)
+            case ("Scala", cpt) => cpt should beEqualTo(1)
+            case ("JEE", cpt) => cpt should beEqualTo(1)
+            case (_, cpt) => cpt should beEqualTo(0)
+          }
+        }
       }
     }
   }

@@ -22,7 +22,7 @@ object Application extends Controller {
       "author" -> nonEmptyText,
       "content" -> nonEmptyText,
       "code" -> nonEmptyText,
-      "randomID" -> nonEmptyText) verifying("Invalid code!", result => result match {
+      "randomID" -> nonEmptyText) verifying ("Invalid code!", result => result match {
         case (author, content, code, id) => captchaService.validateResponseForID(id, code)
       }))
 
@@ -64,4 +64,7 @@ object Application extends Controller {
     Ok(baos.toByteArray()).as("image/jpeg")
   }
 
+  def listTagged(tag: String) = Action { implicit request =>
+    Ok(views.html.listTagged(Post.findTaggedWith(tag), tag))
+  }
 }

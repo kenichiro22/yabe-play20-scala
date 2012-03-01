@@ -58,6 +58,21 @@ object InitialData {
         Comment(NotAssigned, "Mike", "I knew that ...", new Date, 1),
         Comment(NotAssigned, "Tom", "The post is useless ?", new Date, 2)
       ).foreach(Comment.create)
+      
+      Seq(
+        Tag(Id(1), "Play"),
+        Tag(Id(2), "Architecture"),
+        Tag(Id(3), "Test"),
+        Tag(Id(4), "MVC")
+      ).foreach(Tag.create)
+      
+      Seq(
+        TagsForPosts(1, 1),
+        TagsForPosts(1, 2),
+        TagsForPosts(3, 2),
+        TagsForPosts(4, 3)
+      ).foreach(TagsForPosts.create)
+
     }
 
   }

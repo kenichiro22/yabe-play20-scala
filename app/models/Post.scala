@@ -5,11 +5,11 @@ import play.api.db._
 import play.api.Play.current
 import anorm._
 import anorm.SqlParser._
-import collection.immutable.{Nil, ::}
+import collection.immutable.{ Nil, :: }
 
 case class Post(
-                 id: Pk[Long] = NotAssigned,
-                 title: String, content: String, postedAt: Date, authorId: Long) {
+  id: Pk[Long] = NotAssigned,
+  title: String, content: String, postedAt: Date, authorId: Long) {
 
   def prevNext: (Option[Post], Option[Post]) = {
     DB.withConnection {
@@ -28,10 +28,8 @@ case class Post(
 
               order by postedAt desc
 
-          """
-        ).on("date" -> postedAt).as(
-          Post.withPrevNext *
-        ).partition(_._2 == "prev")
+          """).on("date" -> postedAt).as(
+            Post.withPrevNext *).partition(_._2 == "prev")
 
         (result._1 match {
           case List((post, "prev")) => Some(post)
@@ -43,12 +41,33 @@ case class Post(
           })
     }
   }
+
+  def tagItWith(name: String) = {
+    val tag = Tag.findOrCreateByName(name)
+    TagsForPosts.link(tag.id.get, id.get)
+  }
+
+  // Returns the list of Tag for this Post 
+  def getTags: List[String] = {
+    DB.withConnection { implicit connection =>
+      SQL(
+        """
+          SELECT 
+    		  T.NAME 
+          FROM TAG t 
+    		  JOIN TagsForPosts tfp ON tfp.tag_id=t.id 
+    		  JOIN Post p on p.id=tfp.post_id 
+          WHERE 
+    		  p.id={id}
+        """).on('id -> id.get)
+        .as(get[String]("tag.name") *)
+    }
+  }
 }
 
 object Post {
 
   // -- Parsers
-
 
   /**
    * Parse a Post from a ResultSet
@@ -59,8 +78,8 @@ object Post {
       get[String]("post.content") ~
       get[Date]("post.postedAt") ~
       get[Long]("post.author_id") map {
-      case id ~ title ~ content ~ postedAt ~ authorId => Post(id, title, content, postedAt, authorId)
-    }
+        case id ~ title ~ content ~ postedAt ~ authorId => Post(id, title, content, postedAt, authorId)
+      }
   }
 
   /**
@@ -86,7 +105,6 @@ object Post {
     case post ~ user ~ comments => (post, user, comments)
   }
 
-
   /**
    * Create a Post.
    */
@@ -99,10 +117,10 @@ object Post {
               {title}, {content}, {postedAt}, {author_id}
             )
           """).on(
-          'title -> post.title,
-          'content -> post.content,
-          'postedAt -> post.postedAt,
-          'author_id -> post.authorId).executeUpdate()
+            'title -> post.title,
+            'content -> post.content,
+            'postedAt -> post.postedAt,
+            'author_id -> post.authorId).executeUpdate()
         post
     }
   }
@@ -132,9 +150,9 @@ object Post {
           .groupBy(row => (row._1, row._2))
           .mapValues(_.unzip3._3.map(_.orNull))
           .map(row => row._2 match {
-          case List(null) => (row._1._1, row._1._2, List())
-          case comments => (row._1._1, row._1._2, comments)
-        }).toList
+            case List(null) => (row._1._1, row._1._2, List())
+            case comments => (row._1._1, row._1._2, comments)
+          }).toList
     }
 
   def byIdWithAuthorAndComments(id: Long): Option[(Post, User, List[Comment])] =
@@ -153,9 +171,9 @@ object Post {
             .groupBy(row => (row._1, row._2))
             .mapValues(_.unzip3._3.map(_.orNull))
             .map(row => row._2 match {
-            case List(null) => (row._1._1, row._1._2, List())
-            case comments => (row._1._1, row._1._2, comments)
-          }).head)
+              case List(null) => (row._1._1, row._1._2, List())
+              case comments => (row._1._1, row._1._2, comments)
+            }).head)
     }
 
   def count() = {
@@ -165,5 +183,13 @@ object Post {
     }
   }
 
-
+  def findTaggedWith(name: String): List[Post] =
+    DB.withConnection { implicit connection =>
+      SQL("""
+            select p.* from Post p
+            join TagsForPosts tfp on p.id=tfp.post_id
+            join Tag t on tfp.tag_id=t.id
+            where t.name={name}
+        """).on('name -> name).as(Post.simple *)
+    }
 }
